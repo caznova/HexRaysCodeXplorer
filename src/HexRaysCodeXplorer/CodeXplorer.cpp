@@ -393,9 +393,7 @@ static bool get_expr_name(citem_t *citem, qstring& rv)
 	cexpr_t *e = (cexpr_t *)citem;
 
 	// retrieve the name of the routine
-	char citem_name[MAXSTR] = {};
-	e->print1(citem_name, _countof(citem_name) - 1, NULL);
-	rv = citem_name;
+	print1wrapper(e, &rv, NULL);
 	tag_remove(&rv);
 
 	return true;
@@ -486,7 +484,7 @@ static bool idaapi show_offset_in_windbg_format(void *ud) {
 	show_string_in_custom_view(&vu, title, result);
 
 #if defined (__LINUX__) || defined (__MAC__)
-	msg(result.c_str());
+	msg("%s", result.c_str());
 #else
 	OpenClipboard(0);
 	EmptyClipboard();
@@ -576,7 +574,7 @@ static bool idaapi display_vtbl_objects(void *ud)
 
 //--------------------------------------------------------------------------
 // This callback handles various hexrays events.
-static int idaapi callback(void *, hexrays_event_t event, va_list va)
+static ssize_t idaapi callback(void* ud, hexrays_event_t event, va_list va)
 {
 	switch (event)
 	{
@@ -707,7 +705,7 @@ int idaapi init(void)
 	for (unsigned i = 0; i < _countof(kActionDescs); ++i)
 		register_action(kActionDescs[i]);
 
-	install_hexrays_callback(callback, nullptr);
+	install_hexrays_callback((hexrays_cb_t*)callback, nullptr);
 	logmsg(INFO, "Hex-rays version %s has been detected\n", get_hexrays_version());
 	inited = true;
 
@@ -744,7 +742,7 @@ void idaapi term(void)
 	if (inited)
 	{
 		logmsg(INFO, "\nHexRaysCodeXplorer plugin by @REhints terminated.\n\n\n");
-		remove_hexrays_callback(callback, NULL);
+		remove_hexrays_callback((hexrays_cb_t*)callback, NULL);
 		term_hexrays_plugin();
 	}
 }
